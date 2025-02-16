@@ -1,8 +1,9 @@
-// @ts-check
 const eslint = require('@eslint/js');
 const tseslint = require('typescript-eslint');
 const angular = require('angular-eslint');
+// @ts-ignore
 const importPlugin = require('eslint-plugin-import');
+const jestPlugin = require('eslint-plugin-jest'); // Add Jest plugin
 
 module.exports = tseslint.config(
   {
@@ -12,10 +13,12 @@ module.exports = tseslint.config(
       ...tseslint.configs.recommended,
       ...tseslint.configs.stylistic,
       ...angular.configs.tsRecommended,
+      ...jestPlugin.configs.recommended, // Add Jest recommended rules
     ],
     processor: angular.processInlineTemplates,
     plugins: {
       import: importPlugin,
+      jest: jestPlugin, // Add Jest plugin
     },
     rules: {
       '@angular-eslint/directive-selector': [
@@ -95,6 +98,13 @@ module.exports = tseslint.config(
           accessibility: 'no-public',
         },
       ],
+
+      // Jest rules
+      'jest/no-disabled-tests': 'warn',
+      'jest/no-focused-tests': 'error',
+      'jest/no-identical-title': 'error',
+      'jest/prefer-to-have-length': 'warn',
+      'jest/valid-expect': 'error',
     },
   },
   {
