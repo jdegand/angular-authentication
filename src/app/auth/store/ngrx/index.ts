@@ -1,32 +1,33 @@
-import { EnvironmentProviders, inject, provideAppInitializer } from '@angular/core';
-import { Store } from '@ngrx/store';
-import { lastValueFrom } from 'rxjs';
-import { filter, take } from 'rxjs/operators';
+import {
+  computed,
+  EnvironmentProviders,
+  inject,
+  provideAppInitializer,
+} from '@angular/core';
+import { toObservable } from '@angular/core/rxjs-interop';
+import { lastValueFrom, take } from 'rxjs';
 
-import { AuthStateModel, TokenStatus } from '../../models';
+import { TokenStatus } from '../../models';
 
-import { RefreshTokenActions } from './auth.actions';
-import * as AuthSelectors from './auth.selectors';
-
-export { AuthEffects } from './auth.effects';
-export { NgrxAuthFacade } from './auth.facade';
-export * from './auth.reducer';
+import { AuthStore } from './auth.store';
 
 const initializeAuth = () => {
-  const store = inject<Store<AuthStateModel>>(Store);
+  const authStore = inject(AuthStore);
 
-  store.dispatch(RefreshTokenActions.request());
+  // Trigger token refresh
+  authStore.refreshToken();
 
-  const authState$ = store.select(AuthSelectors.selectAuth).pipe(
-    filter(
-      auth =>
-        auth.refreshTokenStatus === TokenStatus.INVALID ||
-        (auth.refreshTokenStatus === TokenStatus.VALID && !!auth.user)
-    ),
-    take(1)
+  // Create a omreactive computed to monitor token status + user availability
+  const authReady$ = toObservable(
+    computed(() => {
+      const status = authStore.refreshTokenStatus();
+      const user = authStore.user?.();
+      return status === TokenStatus.INVALID || (status === TokenStatus.VALID && !!user);
+    })
   );
 
-  return lastValueFrom(authState$);
+  // Return as a promise to block app init until auth status is ready
+  return lastValueFrom(authReady$.pipe(effect => effect, take(1)));
 };
 
 export const provideAuthInit = (): EnvironmentProviders => {

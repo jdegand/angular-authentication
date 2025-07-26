@@ -1,29 +1,35 @@
-import { Injectable, inject } from '@angular/core';
-import { Store } from '@ngrx/store';
+import { Injectable, computed } from '@angular/core';
 
-import { IAuthFacade } from '../../models';
+import { AuthStore } from './auth.store';
 
-import { LogoutAction, LoginActions, AuthUserActions } from './auth.actions';
-import * as AuthSelectors from './auth.selectors';
+@Injectable({
+  providedIn: 'root',
+})
+export class AuthFacade {
+  private store = new AuthStore(); // Call once to get the store instance
 
-@Injectable()
-export class NgrxAuthFacade implements IAuthFacade {
-  private readonly store = inject(Store);
+  // Expose signals as computed signals or observables
+  user$ = computed(() => this.store.user);
+  isLoggedIn$ = computed(() => this.store.isLoggedIn);
+  accessTokenStatus$ = computed(() => this.store.accessTokenStatus);
+  refreshTokenStatus$ = computed(() => this.store.refreshTokenStatus);
+  isLoadingLogin$ = computed(() => this.store.isLoadingLogin);
+  hasLoginError$ = computed(() => this.store.hasLoginError);
 
-  readonly authUser$ = this.store.select(AuthSelectors.selectAuthUser);
-  readonly isLoggedIn$ = this.store.select(AuthSelectors.selectIsLoggedIn);
-  readonly isLoadingLogin$ = this.store.select(AuthSelectors.selectIsLoadingLogin);
-  readonly hasLoginError$ = this.store.select(AuthSelectors.selectLoginError);
-
-  login(username: string, password: string) {
-    this.store.dispatch(LoginActions.request({ username, password }));
+  // Wrapper methods to call store methods
+  login(username: string, password: string): Promise<void> {
+    return this.store.login(username, password);
   }
 
-  logout() {
-    this.store.dispatch(LogoutAction());
+  logout(): Promise<void> {
+    return this.store.logout();
   }
 
-  getAuthUser() {
-    this.store.dispatch(AuthUserActions.request());
+  refreshToken(): Promise<void> {
+    return this.store.refreshToken();
+  }
+
+  getAuthUser(): Promise<void> {
+    return this.store.getAuthUser();
   }
 }
