@@ -1,22 +1,26 @@
-import { Injectable, computed } from '@angular/core';
+import { Injectable, computed, Signal } from '@angular/core';
+
+import { AuthUser, INgRxAuthFacade, TokenStatus } from '../../models';
 
 import { AuthStore } from './auth.store';
 
 @Injectable({
   providedIn: 'root',
 })
-export class AuthFacade {
-  private store = new AuthStore(); // Call once to get the store instance
+export class NgRxAuthFacade implements INgRxAuthFacade {
+  private store = new AuthStore(); // Get store instance
 
-  // Expose signals as computed signals or observables
-  user$ = computed(() => this.store.user);
-  isLoggedIn$ = computed(() => this.store.isLoggedIn);
-  accessTokenStatus$ = computed(() => this.store.accessTokenStatus);
-  refreshTokenStatus$ = computed(() => this.store.refreshTokenStatus);
-  isLoadingLogin$ = computed(() => this.store.isLoadingLogin);
-  hasLoginError$ = computed(() => this.store.hasLoginError);
+  // Signals exposed via computed wrappers
+  user: Signal<AuthUser | undefined> = computed(() => this.store.user?.());
+  isLoggedIn: Signal<boolean> = computed(() => this.store.isLoggedIn());
+  accessTokenStatus: Signal<TokenStatus> = computed(() => this.store.accessTokenStatus());
+  refreshTokenStatus: Signal<TokenStatus> = computed(() =>
+    this.store.refreshTokenStatus()
+  );
+  isLoadingLogin: Signal<boolean> = computed(() => this.store.isLoadingLogin());
+  hasLoginError: Signal<boolean> = computed(() => this.store.hasLoginError());
 
-  // Wrapper methods to call store methods
+  // Methods delegate to store
   login(username: string, password: string): Promise<void> {
     return this.store.login(username, password);
   }
